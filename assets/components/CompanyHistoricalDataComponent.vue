@@ -1,5 +1,80 @@
 <template>
   <b-container fluid>
+    <b-modal ref="my-modal" ok-only>
+      <b-row>
+
+        <b-col lg="6" class="my-1">
+          <b-form-group
+              label="Filter"
+              label-for="filter-input"
+              label-cols-sm="5"
+              label-align-sm="right"
+              label-size="sm"
+              class="mb-0"
+          >
+            <b-input-group size="sm">
+              <b-form-input
+                  id="filter-input"
+                  v-model="companiesTable.filter"
+                  type="search"
+                  placeholder="Type to Search"
+              ></b-form-input>
+
+              <b-input-group-append>
+                <b-button :disabled="!companiesTable.filter" @click="companiesTable.filter = ''">Clear</b-button>
+              </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+        </b-col>
+
+        <b-col sm="5" md="6" class="my-1">
+          <b-form-group
+              label="Per page"
+              label-for="per-page-select"
+              label-cols-sm="6"
+              label-cols-md="4"
+              label-cols-lg="3"
+              label-align-sm="right"
+              label-size="sm"
+              class="mb-0"
+          >
+            <b-form-select
+                id="per-page-select"
+                v-model="companiesTable.perPage"
+                :options="companiesTable.pageOptions"
+                size="sm"
+            ></b-form-select>
+          </b-form-group>
+        </b-col>
+
+        <b-col sm="7" md="6" class="my-1">
+          <b-pagination
+              v-model="companiesTable.currentPage"
+              :total-rows="companiesTable.totalRows"
+              :per-page="companiesTable.perPage"
+              align="fill"
+              size="sm"
+              class="my-0"
+          ></b-pagination>
+        </b-col>
+      </b-row>
+
+      </b-row>
+
+      <!-- Main table element -->
+      <b-table
+          :items="Object.entries(abbreviationToCompanyNameMap)"
+          :filter="companiesTable.filter"
+          :current-page="companiesTable.currentPage"
+          :per-page="companiesTable.perPage"
+          stacked="md"
+          show-empty
+          small
+          @filtered="onFiltered"
+      >
+      </b-table>
+    </b-modal>
+
     <div>
 
       <div v-if="errors.length > 0">
@@ -35,16 +110,31 @@
               content-cols-sm
               content-cols-lg="8"
           >
-            <b-form-input
-                id="input-1"
-                v-model="form.companySymbol"
-                type="text"
-                placeholder="Enter company symbol"
-                aria-describedby="input-1-live-feedback"
-            ></b-form-input>
-            <b-form-invalid-feedback id="input-1-live-feedback">This is a required field and must be at least 3
-              characters.
-            </b-form-invalid-feedback>
+            <b-input-group>
+              <b-form-input
+                  id="input-1"
+                  v-model="form.companySymbol"
+                  type="text"
+                  list="my-list-id"
+                  placeholder="Enter company symbol"
+                  aria-describedby="input-1-live-feedback"
+              ></b-form-input>
+
+              <b-input-group-append>
+                <b-button
+                    id="show-all-companies-button"
+                    @click="showAllCompanies"
+                    variant="outline-info">Show All
+                </b-button>
+              </b-input-group-append>
+
+              <datalist id="my-list-id">
+                <option v-for="(abbreviation,name) in abbreviationToCompanyNameMap" v-bind:value="abbreviation">{{
+                    abbreviation
+                  }}
+                </option>
+              </datalist>
+            </b-input-group>
           </b-form-group>
 
           <b-form-group
@@ -130,7 +220,7 @@
         </b-form>
       </b-card>
       <b-card class="mt-3" header="Form Data Result">
-        <pre class="m-0">{{ errors }}</pre>
+        <pre class="m-0">{{ companyHistoricalData }}</pre>
       </b-card>
     </div>
   </b-container>
@@ -139,7 +229,7 @@
 <script>
 import moment from "moment";
 import * as Validator from 'validatorjs';
-import axios from "core-js/internals/queue";
+import axios from "axios";
 
 export default {
   data() {
@@ -151,7 +241,20 @@ export default {
         companySymbol: '',
         region: null
       },
+      companiesTable: {
+        currentPage: 1,
+        perPage: 15,
+        filter: '',
+        fields: [
+          {key: 'name', label: 'Abbreviation', sortable: true, sortDirection: 'desc'},
+          {key: 'age', label: 'Company name', sortable: true, class: 'text-center'},
+        ],
+        pageOptions: [15, 30, 45, {value: 100, text: "Show a lot"}],
+        totalRows: 0,
+      },
+      companyHistoricalData: [],
       show: true,
+      abbreviationToCompanyNameMap: [],
       regions: [
         {value: null, text: 'No region selected'},
         {value: 'AU', text: 'Australia'},
@@ -171,14 +274,40 @@ export default {
     }
   },
   mounted() {
-    axios.get()
+    let that = this
+    axios({
+      method: 'get',
+      url: '/get_company_to_name_map',
+      responseType: 'stream'
+    })
+        .then(function (response) {
+          that.abbreviationToCompanyNameMap = JSON.parse(response.data)
+          that.companiesTable.totalRows = Object.entries(that.abbreviationToCompanyNameMap).length
+        });
   },
   methods: {
     onSubmit() {
 
       if (this.checkForm()) {
-        alert("Form submitted!");
+        let that = this
+        axios(
+            {
+              method: 'get',
+              url: '/process_company_info',
+              params: that.form
+            }
+        )
+            .then(function (response) {
+              that.companyHistoricalData = JSON.parse(response.data)
+            }).catch(
+            function (response) {
+              console.error(response.data)
+            }
+        );
       }
+    },
+    showAllCompanies() {
+      this.$refs['my-modal'].toggle('#show-all-companies-button')
     },
     checkForm() {
       let result = true
@@ -194,7 +323,7 @@ export default {
       let validator = new Validator(this.form, rules)
       let isValidatorPasses = validator.passes();
       let isDatesCorrect = true
-      if ( moment(this.form.startDate).isAfter( moment(this.form.endDate) )) {
+      if (moment(this.form.startDate).isAfter(moment(this.form.endDate))) {
         this.errors.push('Start date: The start date is after the end date!')
         isDatesCorrect = false
       }
@@ -208,6 +337,9 @@ export default {
       }
 
       return isValidatorPasses && isDatesCorrect
+    },
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
     },
     onReset(event) {
       event.preventDefault()

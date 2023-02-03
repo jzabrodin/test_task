@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Entity\HistoricalDataResponse;
+use App\Entity\CompanyInfoDTO;
 
 interface GetCompanyHistoricalDataByStartAndEndDateInterface
 {
-    public function getCompanyHistoricalData(
-        string $companyName,
-        \DateTime $startDate,
-        \DateTime $endDate,
-        ?string $region = null
-    ): array;
+    public function getCompanyHistoricalData(CompanyInfoDTO $companyInfoDTO): array;
+    public function getFilteredCompanyHistoricalData(CompanyInfoDTO $companyInfoDTO): array;
 }

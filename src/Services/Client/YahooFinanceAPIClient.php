@@ -16,18 +16,15 @@ class YahooFinanceAPIClient implements FinanceApiClient
     private string $apiKey;
     private LoggerInterface $logger;
     private string $yahooFinanceApiURL;
-    private CacheInterface $cache;
 
     public function __construct(
         HttpClientInterface $httpClient,
         LoggerInterface $logger,
-        CacheInterface $cache,
         string $yahooFinanceApiURL,
         string $apiKey
     ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
-        $this->cache = $cache;
         $this->yahooFinanceApiURL = $yahooFinanceApiURL;
         $this->apiKey = $apiKey;
     }

@@ -54,6 +54,7 @@ services:
       - nginx-php81-redis-node
 
   redis-service:
+    container_name: redis-container
     image: redis:7.0.0
     ports:
       - "7379:6379"
@@ -65,6 +66,7 @@ services:
       - nginx-php81-redis-node
 
   mailer:
+    container_name: mailcatcher-container
     image: schickling/mailcatcher
     ports: [ "1025", "1080" ]
     networks:

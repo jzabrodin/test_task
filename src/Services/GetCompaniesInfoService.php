@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Services\Client\NasdaqCompaniesInfoClient;
+use Psr\Cache\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -48,6 +49,9 @@ class GetCompaniesInfoService implements GetCompaniesInfoInterface
         return $responseAsArray;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function getCompaniesInfo(): array
     {
         $key = 'nasdaq-companies-info';
@@ -57,13 +61,15 @@ class GetCompaniesInfoService implements GetCompaniesInfoInterface
             function(ItemInterface $item){
 
                 $item->expiresAfter(86400);
-
                 return $this->getCompaniesInfoArray();
 
             }
         );
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function getCompanyAbbreviationToNameMap(): array
     {
         $key = 'nasdaq-companies-info-map';

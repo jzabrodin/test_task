@@ -1,21 +1,71 @@
 version: '3'
 
-services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-15}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+networks:
+  nginx-php81-redis-node:
 
-volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+services:
+  nginx-service:
+    image: nginx:stable-alpine
+    container_name: nginx-container
+    ports:
+      - "8081:80"
+    volumes:
+      - ./:/var/www/project
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php81-service
+      - redis-service
+    networks:
+      - nginx-php81-redis-node
+
+  php81-service:
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+    container_name: php81-container
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./:/var/www/project
+    networks:
+      - nginx-php81-redis-node
+
+  # mysql
+  mysql8-service:
+    image: mysql:8
+    container_name: mysql8-container
+    ports:
+      - "4306:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always # always restart unless stopped manually
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_PASSWORD: secret
+    networks:
+      - nginx-php81-redis-node
+
+  node-service:
+    image: node:lts-hydrogen
+    container_name: node-container
+    volumes:
+      - ./:/var/www/project
+    working_dir: /var/www/project
+    networks:
+      - nginx-php81-redis-node
+
+  redis-service:
+    image: redis:7.0.0
+    ports:
+      - "7379:6379"
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    depends_on:
+      - php81-service
+    networks:
+      - nginx-php81-redis-node
+
+  mailer:
+    image: schickling/mailcatcher
+    ports: [ "1025", "1080" ]
+    networks:
+      - nginx-php81-redis-node

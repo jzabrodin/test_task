@@ -1,0 +1,16 @@
+App\Entity\CompanyInfoRequest:
+  properties:
+    companySymbol:
+      - NotBlank: ~
+    startDate:
+      - NotBlank: ~
+      - Date: ~
+    endDate:
+      - NotBlank: ~
+      - Date: ~
+    region:
+      - AtLeastOneOf:
+        - IsNull: ~
+        - Choice: { choices: [us,br,au,ca,fr,de,hk,in,it,es,gb,sg], message: Choose a valid region. }
+    email:
+      - Email: ~

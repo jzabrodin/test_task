@@ -18,8 +18,7 @@ class GetCompanyInfoController extends AbstractController
     public function __construct(
         GetCompaniesInfoInterface $getCompaniesInfoService,
         LoggerInterface $logger
-    )
-    {
+    ) {
         $this->getCompaniesInfoService = $getCompaniesInfoService;
         $this->logger = $logger;
     }

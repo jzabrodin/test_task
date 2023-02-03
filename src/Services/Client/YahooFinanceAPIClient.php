@@ -31,7 +31,6 @@ class YahooFinanceAPIClient implements FinanceApiClient
 
     public function getHistoricalData(string $companyName, ?string $region = null): array
     {
-
         $regionParameter = $region !== null ? "&region=$region" : '';
         $url = $this->yahooFinanceApiURL . "/stock/v3/get-historical-data?symbol=$companyName" . $regionParameter;
         try {
@@ -41,7 +40,7 @@ class YahooFinanceAPIClient implements FinanceApiClient
                 [
                     'headers' => [
                         'X-RapidAPI-Key' => $this->apiKey,
-                        'X-RapidAPI-Host' => $this->yahooFinanceApiURL,
+                        'X-RapidAPI-Host' => 'yh-finance.p.rapidapi.com',
                     ]
                 ]
             );
@@ -56,7 +55,7 @@ class YahooFinanceAPIClient implements FinanceApiClient
                     'trace' => $e->getTraceAsString()
                 ]
             );
-            return [];
+            throw $e;
         }
 
         if ($statusCode !== 200) {
@@ -68,7 +67,7 @@ class YahooFinanceAPIClient implements FinanceApiClient
                     'responseCode' => $statusCode
                 ]
             );
-            return [];
+            throw new \HttpResponseException('Incorrect status code');
         }
 
         return $responseAsArray;

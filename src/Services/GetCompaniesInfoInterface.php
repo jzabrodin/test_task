@@ -11,5 +11,5 @@ interface GetCompaniesInfoInterface
     /**
      * @return array<string,string>
      */
-    public function getCompanyAbbreviationToNameMap():array;
+    public function getCompanyAbbreviationToNameMap(): array;
 }

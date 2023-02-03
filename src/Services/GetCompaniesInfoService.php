@@ -58,11 +58,9 @@ class GetCompaniesInfoService implements GetCompaniesInfoInterface
 
         return $this->cache->get(
             $key,
-            function(ItemInterface $item){
-
+            function (ItemInterface $item) {
                 $item->expiresAfter(86400);
                 return $this->getCompaniesInfoArray();
-
             }
         );
     }
@@ -76,8 +74,7 @@ class GetCompaniesInfoService implements GetCompaniesInfoInterface
 
         return $this->cache->get(
             $key,
-            function(ItemInterface $item){
-
+            function (ItemInterface $item) {
                 $item->expiresAfter(86400);
 
                 $companiesInfoArray = $this->getCompaniesInfoArray();
@@ -88,7 +85,6 @@ class GetCompaniesInfoService implements GetCompaniesInfoInterface
                 }
 
                 return $abbreviationToNameMap;
-
             }
         );
     }

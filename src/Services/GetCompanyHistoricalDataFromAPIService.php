@@ -29,7 +29,6 @@ class GetCompanyHistoricalDataFromAPIService implements GetCompanyHistoricalData
     public function getFilteredCompanyHistoricalData(CompanyInfoDTO $companyInfoDTO): array
     {
         $historicalData = $this->getCompanyHistoricalData($companyInfoDTO);
-
         $filteredPrices = [];
 
         $startDateAsTimestamp = $companyInfoDTO->getStartDate()->getTimestamp();

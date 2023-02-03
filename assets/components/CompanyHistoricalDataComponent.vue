@@ -59,8 +59,6 @@
         </b-col>
       </b-row>
 
-      </b-row>
-
       <!-- Main table element -->
       <b-table
           :items="Object.entries(abbreviationToCompanyNameMap)"
@@ -129,8 +127,8 @@
               </b-input-group-append>
 
               <datalist id="my-list-id">
-                <option v-for="(abbreviation,name) in abbreviationToCompanyNameMap" v-bind:value="abbreviation">{{
-                    abbreviation
+                <option v-for="(abbreviation,name) in abbreviationToCompanyNameMap" v-bind:value="name">{{
+                    name
                   }}
                 </option>
               </datalist>
@@ -219,9 +217,78 @@
           <b-button type="reset" variant="danger">Reset</b-button>
         </b-form>
       </b-card>
-      <b-card class="mt-3" header="Form Data Result">
-        <pre class="m-0">{{ companyHistoricalData }}</pre>
-      </b-card>
+
+      <b-row v-show="companyHistoricalData.length">
+
+        <b-col lg="6" class="my-1">
+          <b-form-group
+              label="Filter"
+              label-for="filter-input"
+              label-cols-sm="5"
+              label-align-sm="right"
+              label-size="sm"
+              class="mb-0"
+          >
+            <b-input-group size="sm">
+              <b-form-input
+                  id="filter-input"
+                  v-model="historicalDataTable.filter"
+                  type="search"
+                  placeholder="Type to Search"
+              ></b-form-input>
+
+              <b-input-group-append>
+                <b-button :disabled="!historicalDataTable.filter" @click="historicalDataTable.filter = ''">Clear</b-button>
+              </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+        </b-col>
+
+        <b-col sm="5" md="6" class="my-1">
+          <b-form-group
+              label="Per page"
+              label-for="per-page-select"
+              label-cols-sm="6"
+              label-cols-md="4"
+              label-cols-lg="3"
+              label-align-sm="right"
+              label-size="sm"
+              class="mb-0"
+          >
+            <b-form-select
+                id="per-page-select"
+                v-model="historicalDataTable.perPage"
+                :options="historicalDataTable.pageOptions"
+                size="sm"
+            ></b-form-select>
+          </b-form-group>
+        </b-col>
+
+        <b-col sm="7" md="6" class="my-1">
+          <b-pagination
+              v-model="historicalDataTable.currentPage"
+              :total-rows="historicalDataTable.totalRows"
+              :per-page="historicalDataTable.perPage"
+              align="fill"
+              size="sm"
+              class="my-0"
+          ></b-pagination>
+        </b-col>
+
+        <!-- Main table element -->
+        <b-table
+            :items="companyHistoricalData"
+            :filter="historicalDataTable.filter"
+            :current-page="historicalDataTable.currentPage"
+            :per-page="historicalDataTable.perPage"
+            stacked="md"
+            show-empty
+            small
+            @filtered="onFiltered"
+        >
+        </b-table>
+      </b-row>
+
     </div>
   </b-container>
 </template>
@@ -245,10 +312,13 @@ export default {
         currentPage: 1,
         perPage: 15,
         filter: '',
-        fields: [
-          {key: 'name', label: 'Abbreviation', sortable: true, sortDirection: 'desc'},
-          {key: 'age', label: 'Company name', sortable: true, class: 'text-center'},
-        ],
+        pageOptions: [15, 30, 45, {value: 100, text: "Show a lot"}],
+        totalRows: 0,
+      },
+      historicalDataTable: {
+        currentPage: 1,
+        perPage: 15,
+        filter: '',
         pageOptions: [15, 30, 45, {value: 100, text: "Show a lot"}],
         totalRows: 0,
       },
@@ -298,12 +368,9 @@ export default {
             }
         )
             .then(function (response) {
-              that.companyHistoricalData = JSON.parse(response.data)
-            }).catch(
-            function (response) {
-              console.error(response.data)
-            }
-        );
+              that.companyHistoricalData = response.data
+            }).catch(function (response) {
+        });
       }
     },
     showAllCompanies() {
@@ -339,7 +406,9 @@ export default {
       return isValidatorPasses && isDatesCorrect
     },
     onFiltered(filteredItems) {
-      this.totalRows = filteredItems.length
+      this.companyHistoricalData.totalRows = filteredItems.length
+      that.companyHistoricalData.currentPage = 1
+
     },
     onReset(event) {
       event.preventDefault()
